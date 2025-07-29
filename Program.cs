@@ -9,7 +9,6 @@ using MyToursApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -17,7 +16,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         mySqlOptions => mySqlOptions.EnableRetryOnFailure()
     ));
 
-//  Identity
+// Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = false;
@@ -41,7 +40,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-//  cookies
+// Cookies
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "access_token";
@@ -57,7 +56,7 @@ builder.Services.Configure<CookiePolicyOptions>(opts =>
     opts.MinimumSameSitePolicy = SameSiteMode.None;
 });
 
-//  JWT
+// JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 var key = Encoding.ASCII.GetBytes(secretKey);
@@ -69,7 +68,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; 
+    options.RequireHttpsMetadata = false;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
@@ -129,6 +128,7 @@ using (var scope = app.Services.CreateScope())
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser == null)
     {
+        Console.WriteLine($"Creating new admin user: {adminEmail}");
         adminUser = new IdentityUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
         var result = await userManager.CreateAsync(adminUser, adminPassword);
         if (!result.Succeeded)
@@ -136,6 +136,11 @@ using (var scope = app.Services.CreateScope())
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             throw new Exception("Failed to create admin user: " + errors);
         }
+        Console.WriteLine($"Admin user {adminEmail} created successfully.");
+    }
+    else
+    {
+        Console.WriteLine($"Admin user {adminEmail} already exists.");
     }
 
     if (!await userManager.IsInRoleAsync(adminUser, adminRole))
@@ -146,6 +151,7 @@ using (var scope = app.Services.CreateScope())
             var errors = string.Join(", ", addToRoleResult.Errors.Select(e => e.Description));
             throw new Exception("Failed to add admin user to role: " + errors);
         }
+        Console.WriteLine($"Admin user {adminEmail} added to {adminRole} role.");
     }
 }
 
